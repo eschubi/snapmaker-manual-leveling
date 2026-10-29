@@ -1,0 +1,8 @@
+# .gitignore — snapmaker-manual-leveling
+# Maschinenspezifische Backups und Messwerte nicht ins Repository
+snapmaker_mesh_backup_*.txt
+snapmaker_mesh_manual_*.csv
+
+# Python
+__pycache__/
+*.pyc
