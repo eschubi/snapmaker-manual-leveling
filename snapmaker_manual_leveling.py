@@ -2,9 +2,11 @@
 """
 Snapmaker 2.0 – Manuelle Bettkalibrierung vom PC aus
 =====================================================
-Version: 1.0.9
+Version: 1.1.0
 
 Änderungen:
+  1.1.0  Editor: gesamtes Gitter um einen Offset anheben/absenken (alle Punkte),
+         Anzeige der Änderung vor dem Schreiben
   1.0.9  Nachmessen auch mit CSV als Editor-Grundlage; Rastergröße im Drucker wird
          beim Anfahren selbst geprüft (M420 V), Hinweise zusätzlich im Log
   1.0.8  Klick ins angezeigte Drucker-/CSV-Gitter öffnet den Editor direkt;
@@ -72,7 +74,7 @@ except ImportError:  # pyserial fehlt -> klare Meldung statt Traceback
     print("pyserial fehlt. Installation:  pip install pyserial")
     sys.exit(1)
 
-APP_VERSION = "1.0.9"
+APP_VERSION = "1.1.0"
 BAUDRATE = 115200                   # Marlin/Configuration.h: #define BAUDRATE 115200
 GRID_MIN, GRID_MAX = 2, 11          # GRID_MAX_NUM 11 in Configuration.h
 OUTPUT_DIR = Path(__file__).resolve().parent   # Backups/CSV neben dem Skript
@@ -360,6 +362,8 @@ class LevelingApp:
         # v1.0.5: Gitter-Editor
         ttk.Separator(side).pack(fill="x", pady=6)
         ttk.Button(side, text="Angezeigtes Gitter bearbeiten", command=self._edit_start).pack(anchor="w", fill="x", pady=2)
+        # v1.1.0: ganze Ebene verschieben
+        ttk.Button(side, text="Ganzes Gitter verschieben…", command=self._edit_shift_all).pack(anchor="w", fill="x", pady=2)
         ttk.Button(side, text="Bearbeitetes Gitter schreiben", command=self._edit_write).pack(anchor="w", fill="x", pady=2)
         ttk.Button(side, text="Dauerhaft speichern (M500)", command=self._save_eeprom).pack(anchor="w", fill="x", pady=2)
         ttk.Button(side, text="Mesh anzeigen (M420 V)", command=self._show_mesh).pack(anchor="w", fill="x", pady=2)
@@ -702,6 +706,47 @@ class LevelingApp:
             return
         self.edit_mesh[ij] = round(new, 3)
         self.log(f"Editor I{i} J{j}: {old:.3f} -> {new:.3f}")
+        self._update_labels()
+        self._draw_grid()
+
+    def _edit_shift_all(self):
+        """v1.1.0: alle Punkte des Editors um denselben Offset verschieben.
+
+        Positiver Offset = ganze Ebene höher = Düse druckt überall höher (mehr Abstand).
+        Negativer Offset = ganze Ebene tiefer = Düse näher an der Platte.
+        Geschrieben wird erst mit „Bearbeitetes Gitter schreiben“.
+        """
+        if self.busy:
+            return
+        if self.remeasure is not None:
+            messagebox.showinfo("Verschieben", "Erst die laufende Nachmessung mit Enter abschließen.")
+            return
+        if self.view != "edit":
+            self._edit_start()                  # aus angezeigtem Drucker-Mesh oder CSV
+            if self.view != "edit":
+                return
+        s = simpledialog.askstring(
+            "Ganzes Gitter verschieben",
+            f"Offset für alle {self.edit_n * self.edit_n} Punkte in mm\n"
+            "(z. B. +0.05 = überall höher, -0.03 = überall tiefer):",
+            parent=self.root)
+        if not s:
+            return
+        s = s.strip().replace(",", ".")
+        try:
+            off = float(s)
+        except ValueError:
+            messagebox.showerror("Eingabe", f"Ungültiger Wert: {s}")
+            return
+        if off == 0:
+            return
+        if abs(off) > 0.5 and not messagebox.askyesno(
+                "Großer Offset", f"{off:+.3f} mm auf alle Punkte – wirklich?"):
+            return
+        for ij in self.edit_mesh:
+            self.edit_mesh[ij] = round(self.edit_mesh[ij] + off, 3)
+        self.log(f"Editor: ganzes Gitter um {off:+.3f} mm verschoben "
+                 "– prüfen, dann „Bearbeitetes Gitter schreiben“")
         self._update_labels()
         self._draw_grid()
 

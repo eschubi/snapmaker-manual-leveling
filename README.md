@@ -3,12 +3,13 @@
 
 PC-Oberfläche für die **manuelle Bettkalibrierung des Snapmaker 2.0** (getestet am A250 mit Ein-Düsen-3D-Druckmodul) über USB – mit Tastatur und Maus statt Touchscreen.
 
-Aktuelle Version: **1.0.9**
+Aktuelle Version: **1.1.0**
 
 ## Funktionen
 
 - **Messung mit Unterlegkarte:** Das Tool fährt jeden Rasterpunkt an (2×2 bis 11×11), du senkst per Pfeiltasten in 0,01–1-mm-Schritten ab, bis die Karte leicht schleift, und übernimmst mit Enter.
 - **Gitter-Editor:** Das Drucker-Mesh (`M420 V`) oder eine gespeicherte Messung (CSV) anzeigen und einzelne Punkte **absolut oder relativ korrigieren** oder **mit der Karte nachmessen**.
+- **Ganzes Gitter verschieben:** alle Punkte um einen Offset anheben oder absenken (z. B. `+0.05`), etwa um den ersten Layer insgesamt dünner oder dicker zu machen.
 - **Farbige Rasteranzeige** mit min/max/Spanne und Status Leveling ON/OFF.
 - **Sicherungen:** Vor jeder Messung wird das aktuelle Mesh als Backup mit `M421`-Wiederherstellungsbefehlen gespeichert. Messungen und Bearbeitungen werden als CSV abgelegt.
 - **Dauerhaft speichern** (`M500`) ist ein eigener, bewusster Schritt.
